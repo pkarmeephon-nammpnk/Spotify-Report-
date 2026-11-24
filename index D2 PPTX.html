@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spotify Report Hub</title>
+<style>
+:root{--bg:#f4f7f6;--card:#fff;--tx:#14211c;--mu:#5d6b65;--bd:#dfe6e2;--a:#1f3a5f;--b:#16a394;--up:#1a9d57;--dn:#d6453d;--ac:#0b7bd0;--warn:#b7791f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1714;--card:#17211d;--tx:#e8f0ec;--mu:#9bb0a6;--bd:#27352f;--a:#7aa6e0;--b:#3cc9b8;--up:#4fd08a;--dn:#ff7a72;--ac:#5bb0f0;--warn:#e6b450}}
+:root[data-theme="dark"]{--bg:#0f1714;--card:#17211d;--tx:#e8f0ec;--mu:#9bb0a6;--bd:#27352f;--a:#7aa6e0;--b:#3cc9b8;--up:#4fd08a;--dn:#ff7a72;--ac:#5bb0f0;--warn:#e6b450}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}h2{font-size:16px;margin:0 0 10px}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+button,select,input{font:inherit;color:var(--tx)}
+.tab,.btn{border:1px solid var(--bd);background:var(--card);padding:7px 14px;border-radius:8px;cursor:pointer}
+.tab.on,.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.sm{padding:3px 9px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.kpi .l{color:var(--mu);font-size:13px}.kpi .v{font-size:24px;font-weight:700}
+.up{color:var(--up)}.dn{color:var(--dn)}.mu{color:var(--mu)}
+.warn{border-color:var(--warn);color:var(--warn)}
+.leg{display:flex;gap:14px;font-size:13px;color:var(--mu);margin-bottom:6px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.sc{overflow-x:auto}
+.sc table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mu);font-weight:600;font-size:13px}
+.chip{font-size:12px;border:1px solid var(--warn);color:var(--warn);border-radius:99px;padding:1px 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+label{display:block;font-size:13px;color:var(--mu)}
+input,select{width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.hint{font-size:13px;color:var(--mu);margin:8px 0}
+svg text{fill:var(--mu);font-size:11px}
+.hide{display:none}
+</style></head><body><div class="wrap">
+<div class="top"><h1>🎧 Spotify Report Hub <span class="mu" style="font-size:13px;font-weight:400">VMG + S1</span></h1>
+<div class="tabs"><button class="tab on" data-t="dash">ภาพรวม</button><button class="tab" data-t="entry">บันทึกข้อมูล</button><button class="tab" data-t="hist">ประวัติ</button><button class="tab" data-t="top">Top เพลง</button><button class="btn" id="exp">ส่งออก CSV</button><button class="btn pri" id="pp" title="ใช้ช่วงเวลาที่เลือกในหน้าภาพรวม สูงสุด 12 เดือนล่าสุด">ส่งออก PPTX</button></div></div>
+<div id="msg" class="hint"></div>
+
+<section id="dash">
+<div id="pend"></div>
+<div class="kpis" id="kpis"></div>
+<div class="card"><div class="top" style="margin:0 0 6px"><h2 style="margin:0">Stream รวม VMG + S1</h2>
+<select id="rng" style="width:auto"><option value="0">ทั้งหมด</option><option value="12">12 เดือนล่าสุด</option><option value="6">6 เดือนล่าสุด</option></select></div>
+<div class="leg"><span><i style="background:var(--a)"></i>VMG</span><span><i style="background:var(--b)"></i>S1</span><span>เส้นประ = รอข้อมูล</span></div>
+<div class="sc" id="c1"></div></div>
+<div class="card"><h2>Revenue รวม (THB)</h2><div class="sc" id="c2"></div></div>
+</section>
+
+<section id="entry" class="hide"><div class="card"><h2>บันทึก / แก้ไขข้อมูลรายเดือน</h2>
+<div class="grid"><div><label>เดือน</label><input type="month" id="f_m"></div></div>
+<div class="grid" style="margin-top:10px">
+<div><label>Stream VMG</label><input type="number" step="any" id="f_vs"></div>
+<div><label>Stream S1</label><input type="number" step="any" id="f_ss"></div>
+<div><label>Rev VMG (THB)</label><input type="number" step="any" id="f_vr"></div>
+<div><label>Rev S1 (THB)</label><input type="number" step="any" id="f_sr"></div>
+<div><label>หมายเหตุ (เช่น เรต USD/THB)</label><input type="text" id="f_n" maxlength="200"></div></div>
+<p class="hint">ช่องที่ยังไม่ได้รับรายงาน ให้เว้นว่างไว้ ระบบจะแสดงเป็น "รอข้อมูล" และยังไม่นำไปคำนวณยอดรวม/% เมื่อได้ข้อมูลมาแล้วกลับมาเลือกเดือนเดิมเพื่อเติมได้เลย (ข้อมูลที่กรอกเพิ่มเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น)</p>
+<button class="btn pri" id="save">บันทึก</button></div></section>
+
+<section id="top" class="hide"><div class="card"><div class="grid"><div><label>เดือน (Stream VMG)</label><select id="tm"></select></div></div><p class="hint">เก็บ Top 100 เพลงต่อเดือนเพื่อดูอันดับขึ้นลง "ปล่อยใหม่" = เพลง (ISRC) ที่ไม่เคยอยู่ในรายงานเดือนก่อน แต่ติด Top 50 ทันที</p></div><div id="tb"></div></section>
+<section id="hist" class="hide"><div class="card"><h2>ข้อมูลย้อนหลังทั้งหมด</h2><div class="sc" id="ht"></div></div></section>
+</div>
+<script>
+const SEED={"months":{"2025-11":{"note":"","sr":1005929.729,"ss":102219717,"vr":186485.4,"vs":10065252},"2025-12":{"note":"","sr":1017886.339,"ss":103364676,"vr":217069.569,"vs":11300000},"2026-01":{"note":"","sr":996643.91,"ss":102904654,"vr":205633.584,"vs":10627826},"2026-02":{"note":"","sr":535460.616,"ss":50692072,"vr":811019.04,"vs":51002839},"2026-03":{"note":"","sr":237560.907,"ss":18716327,"vr":1471277.808,"vs":92191106},"2026-04":{"note":"","sr":179418.408,"ss":17834864,"vr":1546925.64,"vs":94272167},"2026-05":{"note":"","sr":209483.428,"ss":17724460,"vr":1823948.568,"vs":112302506},"2026-06":{"note":"","sr":197716.397,"ss":15878215,"vr":1791756.408,"vs":109134622},"2026-07":{"note":"","sr":189531.782,"ss":15515803,"vr":1984985.808,"vs":122542699},"2026-08":{"note":"","sr":194169.239,"ss":15923205,"vr":1952050.15,"vs":125178906},"2026-09":{"note":"Rev S1 = Payable USD x 31.2 THB/USD","sr":209613.24,"ss":16440998,"vr":1983025.51,"vs":141102111},"2026-10":{"note":"Rev S1 = Payable USD x 31.2 THB/USD; รอ Rev VMG","sr":208023.961,"ss":15966513,"vr":null,"vs":133547312}},"tops":{"2026-09":{"artists":[["PORZAX",10489738],["Ink Waruntorn",7087560],["โชเล่ย์ ชคัทพล",3162475],["หนึ่ง บีเคแบนด์",3065784],["SERIOUS BACON",2752670],["Season Five",2620029],["ดิด คิตตี้",2208185],["BILLKIN",2199118],["มาลีฮวนน่า",2147053],["ปราง ปรางทิพย์",2117366]],"labels":[["Solution One Holding",73799257],["BOXX MUSIC",15006640],["ME RECORDS",8811837],["S1 Music",3756603],["PORZAX",2819233],["Move Records",2549301],["Milestone",2195428],["iboom music",1985737],["Spacebar Music Hub",1956981],["Muzik Move",1949336]],"songs":[["ลบไม่ได้ช่วยให้ลืม - BILLKIN",2199118],["สิ้นสุดความพยายาม - PORZAX",1507762],["Flowers for u - Pondering",1455745],["เพราะพี่รักจริง - หนึ่ง บีเคแบนด์",1412110],["สักวันฉันจะหายดี - Ink Waruntorn",1268560],["ความคิดถึงที่เต็มไปด้วยน้ำตา - โชเล่ย์ ชคัทพล",1228929],["ไม่ใช่ไม่รัก - PORZAX",1108388],["FANBOY - AuAu",1070287],["เมื่อไหร่จะบอก - ETC.",963133],["เธอทีละสองฉันทีละคน - PORZAX",943520],["ไม่ได้เลวขนาดนั้น - PORZAX",858134],["โปรดส่งเรามาคู่กันอีกได้ไหม - โชเล่ย์ ชคัทพล",855425],["ลบไม่ได้ช่วยให้ลืม - Ink Waruntorn",839084],["ฉันมาบอกว่า - Season Five",829643],["พูดไม่คิด - Season Five",811451],["พี่ชอบหนูที่สุดเลย - PONCHET",807611],["หินหยดลงน้ำ (Adore) - YENTED",794789],["เหงา เหงา (Insomnia) - Ink Waruntorn",789964],["มนตรา (Mantra) - KENG HARIT",784813],["รักโกรธ - Season five",776337],["พบรัก - Ink Waruntorn",767933],["จำไว้ - Ink Waruntorn",697129],["กลับตัวกลับใจ - Dax Rock Rider",692954],["พอได้เสียว - ดิด คิตตี้",679526],["ผลข้างเคียง (Love Effects) - Ink Waruntorn",673761],["นอนจับมือกันครั้งแรก - Season Five",672222],["สิ้นสุดแรงรั้ง - PORZAX",660421],["พอได้แล้ว - PORZAX",659127],["คนถูกของ - เมนทอล",652766],["คนขี้น้อยใจ (My Fault) - SERIOUS BACON",647106],["จีบไม่จบ (Someday, Say Yes) - PROXIE",610906],["ผู้บ่าวเสื้อปุ๋ย - ดิด คิตตี้",608358],["อุษาสาง - เจนจิรา เฉียงเอก",575903],["กลิ่นดอกไม้ - Newery",574865],["Not The Best But Still Good - TEETEE",572038],["กลับกลาย - มาลีฮวนน่า",560557],["หลับตาฝันถึงชื่อเธอ - PORZAX",559418],["จงเรียกเธอว่านางพญา - Silly Fools",549575],["ถ้าเธอพร้อมที่จะรัก - หนึ่ง บีเคแบนด์",540332],["โกดำ - วสันต์17",539350],["ขอให้เธอมีสุข - หนึ่ง บีเคแบนด์",527658],["ต่อให้ - Season five",516675],["อาย - Singto Numchok",512331],["ไม่เคยได้ลา - Three Man Down",507397],["เจ็บน้อยที่สุด - Zeal",481361],["ใครไม่รักแต่เค้ารัก - PORZAX",479825],["ที่รักครับ (Only One) - ATLAS",474129],["ดวงใจ - ปราง ปรางทิพย์",471697],["ดีเกินไป - Smile Buffalo",465138],["ยังคิดถึง...(Same) - Marc Tatchapon",445302],["เทพลีลา - Silly Fools",434010],["ผีสางนางไม้ - บุ๊ค ศุภกาญจน์",433064],["หากผม - pY-1",428746],["ฉันมาเพื่อลบคืนวันเก่าๆ - เอ๊ะ จิรากร",422086],["ไม่แบ่งใคร (Mine) - ASIA7",418733],["หวังเหวิดจัง(สากลัว) - เมนทอล",417298],["ดึกแล้ว - INK WARUNTORN",415698],["ลีลาวดี - ปราง ปรางทิพย์",415426],["ตายฟรี - Dax Rock Rider",409439],["ปิดตาข้างนึง - ทรงไทย",398185],["คนกระจอก - บุ๊ค ศุภกาญจน์",397231],["คนละชั้น - JAONAAY",386056],["รักร้ายท้ายสุด - PORZAX",374473],["ขอโทษ - Troop Tower",373433],["คนไปไม่รู้ คนอยู่ไม่ไหวแล้ว - โชเล่ย์ ชคัทพล",368359],["คะนึงนิตย์ - ปราง ปรางทิพย์",366694],["ดอกไม้สีเทา - PORZAX",364559],["ผู้เข้าชิงคนโปรด - PORZAX",362788],["ละหมาดอารมณ์ - อ.ไข่ มาลีฮวนน่า",361713],["โลกที่ไม่มีเธอ - Portrait",359515],["เกี่ยวกันไหม(You?) - Ink Waruntorn",358236],["เชื้อไฟ - Hugo",358201],["นี่ไม่ใช่เพลงเศร้านะเว้ย - NTK NATTAKIT",355883],["พี่คงไม่ชอบผมหรอก - PONCHET",349586],["พูดลาสักคำ - The Parkinson",348359],["บักคนซั่ว - ทิดแอม",343572],["คุณจะชอบผมไหม (Your Type?) - SERIOUS BACON",334741],["พูดลอยลอย - อัสนี โชติกุล",334330],["ฝืนตัวเองไม่เป็น - Nont Tanont",330245],["บ่อิน - ก้อง ห้วยไร่",327781],["เทสบ่ดี - ม่อน วรวิทย์ จอนนี่มิวสิค",327056],["ปรางรำเพย - ปราง ปรางทิพย์",325428],["สุดยอดทางพร้าว - ซี ดาหลา",317523],["คนเลว - มาลีฮวนน่า",314623],["ใจจงมั่น - ปราง ปรางทิพย์",313540],["วันนี้เมื่อปีที่แล้ว - เก่ง ธชย",307163],["อย่าเข้ามา - Smile Buffalo",301240],["เขาและฉัน - PORZAX",277811],["อยู่ไหนก็คิดถึง - เมนทอล",276633],["ไม่สนิท - Nont Tanont",276002],["ไม่ถือสา - แมว จิรศักดิ์",273573],["เจ้าผู้เดียว - ดิด คิตตี้",270980],["ถอย - Gliss",270433],["ไม่ชูสแต่ไม่ท้อ (Don’t Give Up) - TEETEE",269751],["แปะหัวใจ (14th Feb) - JAONAAY",266459],["ไม่เข้าใจ - BOSSSICK",266266],["เพื่อนดีเด่น (BEST FRIEND 4EVER) - SERIOUS BACON",263848],["เตรียมใจไว้รักเธอ (101% Love) - TEETEE",261875],["บทเพลงที่ตามหา (Found) - Por Suppakarn",261193],["เกลียดแฟนเก่าเธอ - FIN",261164]],"total":124320695},"2026-10":{"artists":[["PORZAX",15042740],["Ink Waruntorn",6162128],["บุ๊ค ศุภกาญจน์",3464039],["โชเล่ย์ ชคัทพล",3330016],["Season Five",2615862],["หนึ่ง บีเคแบนด์",2555430],["SERIOUS BACON",2524870],["ดิด คิตตี้",2326273],["เมนทอล",2227147],["ปราง ปรางทิพย์",1988949]],"labels":[["Solution One Holding",76390302],["BOXX MUSIC",13134996],["ME RECORDS",8209779],["PORZAX",7365455],["S1 Music",4236195],["Move Records",2925659],["DomundiTV",2775748],["Milestone",2016512],["Spacebar Music Hub",2006170],["Muzik Move",1913841]],"songs":[["ไม่ได้เลวขนาดนั้น - PORZAX",3765627,0],["ลบไม่ได้ช่วยให้ลืม - BILLKIN",1781705,0],["สิ้นสุดความพยายาม - PORZAX",1436543,0],["ยิ้มอันตราย - PORZAX",1426849,1],["Flowers for u - Pondering",1238077,0],["สักวันฉันจะหายดี - Ink Waruntorn",1224305,0],["ความคิดถึงที่เต็มไปด้วยน้ำตา - โชเล่ย์ ชคัทพล",1143303,0],["ไม่ใช่ไม่รัก - PORZAX",1070453,0],["FANBOY - AuAu",1053536,0],["เพราะพี่รักจริง - หนึ่ง บีเคแบนด์",936392,0],["เมื่อไหร่จะบอก - ETC.",914237,0],["เธอทีละสองฉันทีละคน - PORZAX",905580,0],["โปรดส่งเรามาคู่กันอีกได้ไหม - โชเล่ย์ ชคัทพล",900019,0],["ดีใจที่ตรงนั้นไม่ใช่เรา - Only Monday",874227,1],["พี่ชอบหนูที่สุดเลย - PONCHET",838727,0],["มาเฟียบ้านนอก - บุ๊ค ศุภกาญจน์",828704,1],["มนตรา (Mantra) - KENG HARIT",824026,0],["พูดไม่คิด - Season Five",734965,0],["ฉันมาบอกว่า - Season Five",725878,0],["ลบไม่ได้ช่วยให้ลืม - Ink Waruntorn",724896,0],["เพราะฉันเจ็บ - กอกี้ กวิสรา",713828,0],["ผู้บ่าวเสื้อปุ๋ย - ดิด คิตตี้",703489,0],["พอได้เสียว - ดิด คิตตี้",692525,0],["หินหยดลงน้ำ (Adore) - YENTED",686994,0],["ผีสางนางไม้ - บุ๊ค ศุภกาญจน์",684429,0],["เหงา เหงา (Insomnia) - Ink Waruntorn",667356,0],["พบรัก - Ink Waruntorn",659484,0],["หวังเหวิดจัง(สากลัว) - เมนทอล",655769,0],["รักโกรธ - Season five",639467,0],["คนถูกของ - เมนทอล",629799,0],["สิ้นสุดแรงรั้ง - PORZAX",624231,0],["กลิ่นดอกไม้ - Newery",621525,0],["จำไว้ - Ink Waruntorn",621245,0],["เจ็บน้อยที่สุด - Zeal",599361,0],["จีบไม่จบ (Someday, Say Yes) - PROXIE",598175,0],["นี่ไม่ใช่เพลงเศร้านะเว้ย - NTK NATTAKIT",585309,0],["โกดำ - วสันต์17",582252,0],["หลับตาฝันถึงชื่อเธอ - PORZAX",567361,0],["นอนจับมือกันครั้งแรก - Season Five",558596,0],["อาย - Various Artists",558151,0],["ไม่เคยได้ลา - Three Man Down",545927,0],["พอได้แล้ว - PORZAX",543936,0],["ขอให้เธอมีสุข - หนึ่ง บีเคแบนด์",535662,0],["Not The Best But Still Good - TEETEE",530758,0],["กลับตัวกลับใจ - Dax Rock Rider",530726,0],["อุษาสาง - เจนจิรา เฉียงเอก",520621,0],["ต่อให้ - Season five",515069,0],["บ้านเธอบ้านฉัน - เบิ้ล ยุทธพล",513395,0],["ใครไม่รักแต่เค้ารัก - PORZAX",508544,0],["ดวงใจ - ปราง ปรางทิพย์",498070,0],["คนกระจอก - บุ๊ค ศุภกาญจน์",492716,0],["ที่รักครับ (Only One) - ATLAS",474359,0],["ถ้าเธอพร้อมที่จะรัก - หนึ่ง บีเคแบนด์",473816,0],["หนังทุนต่ำ - Zom Marie",468812,0],["ตายฟรี - Dax Rock Rider",445803,0],["เพลงจูบ (Safe Zone) - TLE MATIMUN",440088,1],["กลับกลาย - มาลีฮวนน่า",439896,0],["รักร้ายท้ายสุด - PORZAX",433167,0],["อยู่ไหนก็คิดถึง - เมนทอล",428449,0],["ฉันมาเพื่อลบคืนวันเก่าๆ - เอ๊ะ จิรากร",421940,0],["คนไปไม่รู้ คนอยู่ไม่ไหวแล้ว - โชเล่ย์ ชคัทพล",421156,0],["46211 - FirstOne",411565,1],["ไม่แบ่งใคร (Mine) - ASIA7",411049,0],["ปิดตาข้างนึง - ทรงไทย",401084,0],["ดีเกินไป - Smile Buffalo",399464,0],["คนขี้น้อยใจ (My Fault) - SERIOUS BACON",398809,0],["จงเรียกเธอว่านางพญา - Silly Fools",396212,0],["ยิ้มเธอยังสวยเหมือนเคย - PORZAX",389520,0],["เกี่ยวกันไหม(You?) - Ink Waruntorn",387314,0],["ลีลาวดี - ปราง ปรางทิพย์",386316,0],["โลกที่ไม่มีเธอ - Portrait",364474,0],["ลบ - Dr.Fuu",359621,0],["เขาและฉัน - PORZAX",355561,0],["ผู้เข้าชิงคนโปรด - PORZAX",351345,0],["เทสบ่ดี - ม่อน วรวิทย์ จอนนี่มิวสิค",347367,0],["พี่คงไม่ชอบผมหรอก - PONCHET",345181,0],["ดอกไม้สีเทา - PORZAX",344548,0],["หากผม - pY-1",343654,0],["บ่อิน - ก้อง ห้วยไร่",342074,0],["ยังคิดถึง...(Same) - Marc Tatchapon",336437,0],["ในดวงดาวสีน้ำเงิน - LHAM SOMPHOL",332349,0],["คนละชั้น - JAONAAY",331315,0],["ใจจงมั่น - ปราง ปรางทิพย์",322656,0],["บักคนซั่ว - ทิดแอม",321176,0],["ขอโทษ - Troop Tower",319023,0],["ละหมาดอารมณ์ - อ.ไข่ มาลีฮวนน่า",314387,0],["เชื้อไฟ - Hugo",312110,0],["เมืองหลวงใจร้าย - นิว พงศกร",307884,0],["เทพลีลา - Silly Fools",307383,0],["สุดยอดทางพร้าว - ซี ดาหลา",305823,0],["ภาพถ่าย - บิ๊กสุรินทร์",297642,0],["ถอย - Gliss",293998,0],["ฝืนตัวเองไม่เป็น - Nont Tanont",293867,0],["คุณจะชอบผมไหม (Your Type?) - SERIOUS BACON",293393,0],["ไม่เข้าใจ - BOSSSICK",292281,0],["ถ้าเธอไม่รักทำไมไม่บอกฉัน - PAPER",290529,0],["พูดลาสักคำ - The Parkinson",287568,0],["พูดลอยลอย - อัสนี โชติกุล",285960,0],["สาวใต้ยืนหนึ่ง - โชเล่ย์ ชคัทพล",280399,0],["ปรางรำเพย - ปราง ปรางทิพย์",279024,0]],"total":133547312}}};
+const LS='spotifyHub.v1';let OV={};try{OV=JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){}
+const SUBS={};
+const cur=()=>{const o={months:Object.assign({},SEED.months,OV.months||{}),tops:Object.assign({},SEED.tops,OV.tops||{})};(OV.del||[]).forEach(k=>{const[c,i]=k.split('/');delete o[c][i]});return o};
+const snap=c=>({docs:Object.entries(cur()[c]).map(([id,d])=>({id,data:()=>d}))});
+const emit=c=>(SUBS[c]||[]).forEach(f=>f(snap(c)));
+const persist=()=>{try{localStorage.setItem(LS,JSON.stringify(OV))}catch(e){}};
+const DBSHIM={collection:c=>({onSnapshot:f=>{(SUBS[c]=SUBS[c]||[]).push(f);f(snap(c))},doc:id=>({
+ set:async d=>{(OV[c]=OV[c]||{})[id]=d;OV.del=(OV.del||[]).filter(k=>k!==c+'/'+id);persist();emit(c)},
+ delete:async()=>{(OV.del=OV.del||[]).push(c+'/'+id);if(OV[c])delete OV[c][id];persist();emit(c)}})})};
+const DLSHIM={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data],{type:'text/csv'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}};
+const claude={use:async n=>n==='db'?DBSHIM:n==='downloads'?DLSHIM:null};
+const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const $=s=>document.querySelector(s);
+let rows=[],db=null,loaded=false;
+const lab=id=>{const[y,m]=id.split('-');return TH[+m-1]+' '+y.slice(2)};
+const fmt=n=>n==null?'—':Math.round(n).toLocaleString('en-US');
+const abbr=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'k':String(Math.round(n));
+const add=(a,b)=>a==null||b==null?null:a+b;
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function derive(){let ps=null,pr=null;rows.forEach(r=>{r.st=add(r.vs,r.ss);r.rv=add(r.vr,r.sr);
+r.sp=r.st!=null&&ps!=null?(r.st/ps-1)*100:null;r.rp=r.rv!=null&&pr!=null?(r.rv/pr-1)*100:null;
+if(r.st!=null)ps=r.st;if(r.rv!=null)pr=r.rv;})}
+const pct=p=>p==null?'<span class="mu">—</span>':`<span class="${p>=0?'up':'dn'}">${p>=0?'▲':'▼'} ${Math.abs(p).toFixed(2)}%</span>`;
+function chart(list,ka,kb){
+ if(!list.length)return'<p class="hint">ยังไม่มีข้อมูล</p>';
+ const bw=46,W=Math.max(560,list.length*(bw+12)+40),H=240,t=26,b=H-26;
+ const mx=Math.max(...list.map(r=>(r[ka]||0)+(r[kb]||0)),1);let o=`<svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="chart">`;
+ list.forEach((r,i)=>{const x=20+i*(bw+12),a=r[ka]||0,c=r[kb]||0,ha=a/mx*(b-t),hc=c/mx*(b-t),ok=r[ka]!=null&&r[kb]!=null;
+  o+=`<rect x="${x}" y="${b-ha}" width="${bw}" height="${ha}" fill="var(--a)"/><rect x="${x}" y="${b-ha-hc}" width="${bw}" height="${hc}" fill="var(--b)"/>`;
+  if(!ok)o+=`<rect x="${x}" y="${t}" width="${bw}" height="${b-t}" fill="none" stroke="var(--warn)" stroke-dasharray="4 3"/>`;
+  o+=`<text x="${x+bw/2}" y="${b-ha-hc-5}" text-anchor="middle">${ok?abbr(a+c):''}</text><text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${lab(r.id)}</text>`});
+ return o+'</svg>'}
+function render(){derive();const n=+$('#rng').value,list=n?rows.slice(-n):rows;
+ const ls=[...rows].reverse().find(r=>r.st!=null),lr=[...rows].reverse().find(r=>r.rv!=null);
+ $('#kpis').innerHTML=(ls?`<div class="card kpi"><div class="l">Stream รวมล่าสุด (${lab(ls.id)})</div><div class="v">${fmt(ls.st)}</div>${pct(ls.sp)} <span class="mu">vs เดือนก่อน</span></div>`:'')+
+ (lr?`<div class="card kpi"><div class="l">Rev รวมล่าสุด (${lab(lr.id)}) THB</div><div class="v">${fmt(lr.rv)}</div>${pct(lr.rp)} <span class="mu">vs เดือนก่อน</span></div>`:'')+
+ (rows.length?`<div class="card kpi"><div class="l">ข้อมูลที่เก็บไว้</div><div class="v">${rows.length} เดือน</div><span class="mu">${lab(rows[0].id)} – ${lab(rows[rows.length-1].id)}</span></div>`:'');
+ const pend=[];rows.forEach(r=>{const m=[];if(r.vs==null)m.push('Stream VMG');if(r.ss==null)m.push('Stream S1');if(r.vr==null)m.push('Rev VMG');if(r.sr==null)m.push('Rev S1');if(m.length)pend.push(`${lab(r.id)}: ${m.join(', ')}`)});
+ $('#pend').innerHTML=pend.length?`<div class="card warn"><b>รอข้อมูล</b> — ${pend.map(esc).join(' · ')}</div>`:'';
+ $('#c1').innerHTML=chart(list,'vs','ss');$('#c2').innerHTML=chart(list,'vr','sr');
+ const th='<table><tr><th>เดือน</th><th>Stream VMG</th><th>Stream S1</th><th>รวม</th><th>% เปลี่ยน</th><th>Rev VMG</th><th>Rev S1</th><th>รวม (THB)</th><th>% เปลี่ยน</th><th></th></tr>';
+ $('#ht').innerHTML=rows.length?th+[...rows].reverse().map(r=>`<tr><td>${lab(r.id)}${r.note?` <span class="mu" title="${esc(r.note)}">📝</span>`:''}</td><td>${fmt(r.vs)}</td><td>${fmt(r.ss)}</td><td><b>${fmt(r.st)}</b></td><td>${pct(r.sp)}</td><td>${fmt(r.vr)}</td><td>${fmt(r.sr)}</td><td><b>${fmt(r.rv)}</b></td><td>${pct(r.rp)}</td><td><button class="btn sm" data-e="${r.id}">แก้ไข</button> <button class="btn sm" data-d="${r.id}">ลบ</button></td></tr>`).join('')+'</table>':'<p class="hint">ยังไม่มีข้อมูล เริ่มที่แท็บ "บันทึกข้อมูล"</p>'}
+function fill(id){const r=rows.find(x=>x.id===id)||{};$('#f_m').value=id||'';[['vs'],['ss'],['vr'],['sr']].forEach(([k])=>$('#f_'+k).value=r[k]==null?'':r[k]);$('#f_n').value=r.note||''}
+function tab(t){document.querySelectorAll('section').forEach(s=>s.classList.toggle('hide',s.id!==t));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t))}
+document.querySelector('.tabs').onclick=e=>{const t=e.target.dataset.t;if(t)tab(t)};
+$('#rng').onchange=render;
+let tops=[];
+function topRender(){const sel=$('#tm'),cur0=sel.value;
+ sel.innerHTML=[...tops].reverse().map(t=>`<option value="${esc(t.id)}">${lab(t.id)}</option>`).join('');
+ if(!tops.length){$('#tb').innerHTML='<p class="hint">ยังไม่มีข้อมูลรายเพลง</p>';return}
+ sel.value=tops.some(t=>t.id===cur0)?cur0:tops[tops.length-1].id;
+ const i=tops.findIndex(t=>t.id===sel.value),t=tops[i],p=tops[i-1];
+ const B=x=>`<span class="chip" style="color:var(--up);border-color:var(--up)">${x}</span>`,ar=d=>d>0?`<span class="up">▲ ${d}</span>`:d<0?`<span class="dn">▼ ${-d}</span>`:'<span class="mu">=</span>',ix=a=>new Map((a||[]).map((x,k)=>[x[0],k+1]));
+ const ps=p?ix(p.songs):null,pl=p?ix(p.labels):null,pa=p?ix(p.artists):null;
+ const tb=(h,a,pm,lim,song)=>`<div class="card"><h2>${h}</h2><div class="sc"><table><tr><th>#</th><th style="text-align:left">ชื่อ</th><th>Stream</th><th>% ของยอดรวม</th><th>เดือนก่อน</th><th style="text-align:left">เปลี่ยนแปลง</th></tr>${a.slice(0,lim).map((x,k)=>{const o=pm&&pm.get(x[0]);let c='<span class="mu">—</span>';
+  if(pm){if(song&&x[2]===1)c=B('ปล่อยใหม่ ติด Top 50 ทันที');else if(o==null||o>lim)c=B('เข้า Top '+lim+' ใหม่');else c=ar(o-(k+1))}
+  return`<tr><td>${k+1}</td><td style="text-align:left">${esc(x[0])}</td><td>${fmt(x[1])}</td><td>${(x[1]/t.total*100).toFixed(2)}%</td><td>${o?'#'+o:'—'}</td><td style="text-align:left">${c}</td></tr>`}).join('')}</table></div></div>`;
+ const cur=new Map(t.songs.map((x,k)=>[x[0],k+1])),dr=p?p.songs.slice(0,50).map((x,k)=>[x,k+1]).filter(([x])=>!(cur.get(x[0])<=50)):[],t50=t.songs.slice(0,50);
+ const sm=p?`<div class="card"><b>สรุปเทียบเดือนก่อน (${lab(p.id)}):</b> เข้า Top 50 ใหม่ ${t50.filter(x=>{const o=ps.get(x[0]);return o==null||o>50}).length} เพลง · ปล่อยใหม่ติดทันที ${t50.filter(x=>x[2]===1).length} เพลง · หลุด Top 50 ${dr.length} เพลง</div>`:'';
+ const dc=p&&dr.length?`<div class="card"><h2>หลุดจาก Top 50</h2><div class="sc"><table><tr><th>เดือนก่อน</th><th style="text-align:left">เพลง</th><th>ตอนนี้</th></tr>${dr.map(([x,o])=>`<tr><td>#${o}</td><td style="text-align:left">${esc(x[0])}</td><td>${cur.get(x[0])?'#'+cur.get(x[0]):'ต่ำกว่า #100'}</td></tr>`).join('')}</table></div></div>`:'';
+ $('#tb').innerHTML=sm+tb('Top 50 เพลง',t.songs,ps,50,true)+dc+tb('Top 10 Label',t.labels,pl,10)+tb('Top 10 Artist',t.artists,pa,10)}
+function topRenderOld(){const sel=$('#tm'),cur=sel.value;
+ sel.innerHTML=[...tops].reverse().map(t=>`<option value="${esc(t.id)}">${lab(t.id)}</option>`).join('');
+ if(!tops.length){$('#tb').innerHTML='<p class="hint">ยังไม่มีข้อมูลรายเพลง</p>';return}
+ sel.value=tops.some(t=>t.id===cur)?cur:tops[tops.length-1].id;
+ const i=tops.findIndex(t=>t.id===sel.value),t=tops[i],p=tops[i-1],prev=p?new Set(p.songs.map(x=>x[0])):null;
+ const tb=(h,a,fl)=>`<div class="card"><h2>${h}</h2><div class="sc"><table><tr><th>#</th><th style="text-align:left">ชื่อ</th><th>Stream</th><th>% ของยอดรวม</th></tr>${a.map((x,k)=>`<tr><td>${k+1}</td><td style="text-align:left">${esc(x[0])}${fl&&prev&&!prev.has(x[0])?' <span class="chip" style="color:var(--up);border-color:var(--up)">NEW</span>':''}</td><td>${fmt(x[1])}</td><td>${(x[1]/t.total*100).toFixed(2)}%</td></tr>`).join('')}</table></div></div>`;
+ $('#tb').innerHTML=tb('Top 10 Label',t.labels)+tb('Top 10 Artist',t.artists)+tb('Top 50 เพลง',t.songs,true)}
+$('#tm').onchange=topRender;
+$('#f_m').onchange=e=>fill(e.target.value);
+const num=id=>{const v=$(id).value;return v===''?null:Number(v)};
+$('#save').onclick=async()=>{const id=$('#f_m').value;if(!/^\d{4}-\d{2}$/.test(id)){$('#msg').textContent='กรุณาเลือกเดือน';return}
+ if(!db){$('#msg').textContent='ยังบันทึกไม่ได้ (ต้องล็อกอินและมีสิทธิ์แก้ไข)';return}
+ try{await db.collection('months').doc(id).set({vs:num('#f_vs'),ss:num('#f_ss'),vr:num('#f_vr'),sr:num('#f_sr'),note:$('#f_n').value.trim()});$('#msg').textContent='บันทึก '+lab(id)+' แล้ว';tab('hist')}catch(e){$('#msg').textContent='บันทึกไม่สำเร็จ: '+(e&&e.message||e.code||'')}};
+$('#ht').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.e){fill(b.dataset.e);tab('entry');return}
+ if(b.dataset.d){if(b.dataset.arm!==b.dataset.d){b.dataset.arm=b.dataset.d;b.textContent='ยืนยันลบ?';return}
+ try{await db.collection('months').doc(b.dataset.d).delete()}catch(x){$('#msg').textContent='ลบไม่สำเร็จ'}}};
+let pgP=null;
+function loadPptx(){return pgP||(pgP=new Promise((ok,no)=>{const us=['https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js','https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'];const t=i=>{if(i>=us.length){pgP=null;no(new Error('load'));return}const s=document.createElement('script');s.src=us[i];s.onload=()=>window.PptxGenJS?ok(window.PptxGenJS):t(i+1);s.onerror=()=>{s.remove();t(i+1)};document.head.appendChild(s)};t(0)}))}
+$('#pp').onclick=async()=>{
+ const dl=await claude.use('downloads');if(!dl){$('#msg').textContent='ส่งออกไม่ได้ในมุมมองนี้';return}
+ derive();const n=+$('#rng').value,list=(n?rows.slice(-n):rows).slice(-12);
+ if(!list.length){$('#msg').textContent='ยังไม่มีข้อมูลให้ส่งออก';return}
+ $('#msg').textContent='กำลังสร้างไฟล์ PPTX…';
+ let P;try{P=await loadPptx()}catch(e){$('#msg').textContent='โหลดตัวสร้าง PPTX ไม่สำเร็จ ลองใหม่อีกครั้ง';return}
+ try{
+ const pres=new P();pres.layout='LAYOUT_16x9';const F='Tahoma',NV='1F3A5F';
+ const c=pres.addSlide();c.background={color:'0A7BD0'};
+ c.addText('SPOTIFY',{x:4,y:1.6,w:5.5,h:0.9,fontSize:44,bold:true,color:'FFFFFF',fontFace:F,isTextBox:true});
+ c.addText('REPORT',{x:4,y:2.5,w:5.5,h:0.9,fontSize:44,bold:true,color:'FFFFFF',fontFace:F,isTextBox:true});
+ c.addText(lab(list[0].id)+' – '+lab(list[list.length-1].id),{x:4,y:3.5,w:5.5,h:0.4,fontSize:16,color:'FFFFFF',fontFace:F,isTextBox:true});
+ const mk=(title,ka,kb,ks,kp)=>{const s=pres.addSlide(),lb=list.map(r=>lab(r.id));
+  s.addText(title,{x:0.4,y:0.2,w:9.2,h:0.45,fontSize:18,bold:true,color:NV,fontFace:F,isTextBox:true});
+  s.addChart(pres.charts.BAR,[{name:'VMG',labels:lb,values:list.map(r=>r[ka]||0)},{name:'S1',labels:lb,values:list.map(r=>r[kb]||0)}],{x:0.4,y:0.7,w:9.2,h:2.45,barDir:'col',barGrouping:'clustered',chartColors:[NV,'A23B3B'],showLegend:true,legendPos:'b',legendFontSize:9,catAxisLabelFontSize:9,valAxisLabelFontSize:8,valAxisLabelFormatCode:'#,##0',valGridLine:{color:'E5E7EB',size:0.5},catGridLine:{style:'none'}});
+  const H=t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:NV},align:'center'}});
+  const T=[[H('เดือน'),H('VMG'),H('S1'),H('รวม'),H('% เปลี่ยน')]].concat(list.map(r=>{const p=r[kp];return[{text:lab(r.id),options:{align:'left'}},{text:fmt(r[ka])},{text:fmt(r[kb])},{text:fmt(r[ks]),options:{bold:true}},{text:p==null?'—':(p>=0?'+':'')+p.toFixed(2)+'%',options:{color:p==null?'666666':p>=0?'1A9D57':'D6453D'}}]}));
+  s.addTable(T,{x:0.4,y:3.25,w:9.2,colW:[1.4,1.9,1.9,2,2],fontSize:8,fontFace:F,rowH:0.17,align:'right',border:{type:'solid',color:'D1D5DB',pt:0.5}})};
+ mk('Stream VMG – S1','vs','ss','st','sp');mk('REV VMG – S1 (THB)','vr','sr','rv','rp');
+ const blob=await pres.write({outputType:'blob'});
+ await dl.save({filename:'spotify-report-'+list[list.length-1].id+'.pptx',data:blob});$('#msg').textContent='';
+ }catch(e){$('#msg').textContent='สร้างไฟล์ PPTX ไม่สำเร็จ'}};
+$('#exp').onclick=async()=>{const dl=await claude.use('downloads');if(!dl){$('#msg').textContent='ส่งออกไม่ได้ในมุมมองนี้';return}
+ const h='Month,Stream VMG,Stream S1,Stream Total,Stream %Change,Rev VMG THB,Rev S1 THB,Rev Total THB,Rev %Change,Note\n';
+ const q=s=>'"'+String(s||'').replace(/"/g,'""')+'"',v=x=>x==null?'':x,p=x=>x==null?'':x.toFixed(2);
+ const c=rows.map(r=>[r.id,v(r.vs),v(r.ss),v(r.st),p(r.sp),v(r.vr),v(r.sr),v(r.rv),p(r.rp),q(r.note)].join(',')).join('\n');
+ try{await dl.save({filename:'spotify-report.csv',data:'\ufeff'+h+c})}catch(e){}};
+render();
+(async()=>{try{db=await claude.use('db')}catch(e){}
+ if(!db){$('#msg').textContent='ข้อมูลจะแสดงเมื่อเปิดหน้านี้ในหน้า Artifact ของ Claude และล็อกอินอยู่';return}
+ const tm=setTimeout(()=>{if(!loaded)$('#msg').textContent='โหลดข้อมูลช้ากว่าปกติ…'},10000);
+ db.collection('tops').onSnapshot(s=>{tops=s.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.songs&&t.labels&&t.artists&&t.total).sort((a,b)=>a.id<b.id?-1:1);topRender()},()=>{});
+ db.collection('months').onSnapshot(s=>{loaded=true;clearTimeout(tm);
+  rows=s.docs.map(d=>({id:d.id,...d.data()})).filter(r=>/^\d{4}-\d{2}$/.test(r.id)).sort((a,b)=>a.id<b.id?-1:1);render()},
+  e=>{$('#msg').textContent='โหลดข้อมูลไม่สำเร็จ'})})();
+</script></body></html>
